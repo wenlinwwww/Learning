@@ -4,4 +4,6 @@ An algorithm is a set of defined steps or rules to follow in order to achieve a 
 ## Lists
 |Algorithm| Link |
 |:----:|:-----:|
-|二进制和位运算  Binary and Bitwise Operations||
+|二进制和位运算<br>Binary and Bitwise Operations||
+|Selection/Bubble/Insertion Sorting<br>选择、冒泡、插入排序|[See More](./sorting.md)|
+|Validator<br>对数器|[See More](./validator.md)|
