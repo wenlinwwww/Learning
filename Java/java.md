@@ -244,6 +244,7 @@ psvm：快速生成`public static void(String[] args) {}`
 sout: 快速生成`System.out.println();`  
 数组名.fori：快速生成这个数组的遍历
 数组名.for：快速生成数组的遍历（for each写法）
+快速生成construct/getter&setter: alt+insert
 ctrl + alt + S: 快速打开Setting  
 ctrl + alt + shift + S：快速打开project structure  
 shift + F6：rename  
@@ -1999,13 +2000,24 @@ e.g.
 #### String注意事项
 1. String对象的内容不可改变，被称为不可变字符串对象（immutable）
 2. 只要是以"..."方式写出的字符串对象哎，会存储在字符串常量池（堆内存里的），且相同内容的字符串只储存一份。但通过new方式创建字符串对象，每new一次就会产生一个新的对象放在堆内存中。（这样设计是为了节约内存）
+3. jdk7以上StringTable(串池)从方法区移动到堆内存（new出来的对象都在这里）
 
 总结：
-直接赋值的是在字符串常量池里面的，这个池子是通用的，但是new出来的是进入堆了的，和串池不是一个地址。
+直接赋值的是在字符串常量池里面的，这个池子是通用的，但是new出来的是进入堆了的，和StringTable(串池)不是一个地址。
 ```java
 String s1 = new String("abc");
 String s2 = "abc";
 sout(s1 == s2); //false
+```
+practice 1:
+参考下面例子，首先main先进栈内存，然后看s1的值有没有存在串池，此时发现没用存在，那就在堆内存的StringTable（串池）创建一个地址，之后看s2是不是new，不是，而且串池里面已经有这个地址了，就直接复用就行。这样可以节约内存。
+```java
+public class demo {
+    public static void main(String[] args) {
+        String s1 = "abc";
+        String s2 = "abc";
+    }
+}
 ```
 
 practice 2:
@@ -2027,12 +2039,183 @@ public class Test {
 }
 ```
 
-#### summary
+practice 3:
+如下所示，栈内存先是方法main，然后看ch，创建新的，堆内存存abc及它三个字母地址，栈内存存一个ch并将堆内存地址0x0011写上，再到s1，因为new了一个对象，要去堆内存开一个新的空间，传这个地址0x0022给栈内存的s1；再看s2，也是new了一个对象，要去堆内存开一个新的空间，传这个新地址0x0033给栈内存的s2.
+```java
+public class demo {
+    public static void main(String[] args) {
+        char[] ch = ('a', 'b', 'c');
+        String s1 = new String(ch);
+        String s2 = new String(ch);
+    }
+}
+```
+
+practice 4:
+- charAt(int index)根据索引返回字符串
+- length()返回字符串长度，注意数组长度写法a.length;字符串长度写法a.length()
+- 大小写ascii码 or `str >= 'a' && str <= 'z'` or `str >= 'A' && str <= 'Z'`,注意这样写有个问题，因为是自动转换ascii码表，所以0-9会有变化，就要写成`str >= '0' && str <= '9'`
+
+practice 5:
+数组int[] arr = [1,2,3];
+返回结果：[1,2,3]
+```java
+    public static String arrToString(int[] arr) {
+        if (arr == null) {
+            return "";
+        }
+        if (arr.length == 0) {
+            return "[]";
+        }
+        String result = "[";
+        for (int i = 0; i < arr.length; i++) {
+            if (i != arr.length - 1) {
+                result += arr[i];
+                result += ", "
+            } else {
+                result += arr[i];
+            }
+            
+        }
+        return result + "]";
+    }
+```
+
+practice 6:
+输入abc，返回cba
+```java
+    public static String arrConverse(String str) {
+        if (arr == null || arr.length == 0) {
+            return "";
+        }
+        String result;
+        for (int i = str.length() - 1; i >= 0; i--) {
+            result += str.charAt(i);  
+        }
+        return result;
+    }
+```
+#### String 对比
+`==`对比的是什么？  
+- 如果是基本数据类型：那就是对比数据值。
+  ```java
+    int a = 10;
+    int b = 10;
+    sout(a==b); //return true
+  ```
+- 如果是引用数据类型，就是对比地址值。
+    ```java
+    String a = new String("abc");
+    String b = new String("abc");
+    sout(a==b); //return false
+  ```
+
+### StringBuilder
+什么是StringBuilder？  
+是一个容器，创建后内容可变。  
+作用：提高字符串操作效率
+e.g.  
+```java
+String a = "ab";
+String b = "bc";
+String c = "cd";
+StringBuilder sb = new StringBuilder();
+sb.append(a);
+sb.append(b);
+sb.append(c);
+sout(sb.toString());
+```
+构造方法：  
+- StringBuilder() 
+- StringBUilder(String str)  
+常用方法：
+- append(任意类型)
+- reverse()
+- length()
+- toString()
+
+ps:打印StringBuilder是打印属性值，不是地址值，因为是java已经写好的类。
+
+什么时候会用到StringBuilder？  
+字符串拼接或反转的时候。
+
+practice 1:
+字符串12321，是对称字符串返回true，而112233不是，返回false.
+(思路：反过来和正着是一样的，就是对称)
+```java
+public static Boolean syn(String str) {
+    StringBuilder sb = new StringBuilder(str).reverse().toString();
+    return str.equals(sb);
+}
+```
+practice 2:
+数组int[] arr = [1,2,3];
+返回结果：[1,2,3]
+```java
+public static String combine(int[] arr) {
+    StringBuilder sb = new StringBuilder("[");
+    for (int i = 0; i < arr.length; i++ ) {
+        if (i == arr.length - 1) {
+            sb.append(arr[i]);
+        } else {
+            sb.append(arr[i]).append(", ");
+        }
+    }
+    return sb.append("]").toString();
+}
+```
+
+### StringJoiner
+和StringBuilder差不多，jdk8才出现。
+StringJoiner构造方法：  
+StringJoiner(间隔符号);  
+StringJoiner(间隔符号, 开始符号, 结束符号);  
+
+成员方法:  
+add() - 和builder的append差不多  
+length() - 所有字符总个数  
+toString()  
+
+practice 1:  
+数组int[] arr = [1,2,3];
+返回结果：[1,2,3]
+```java
+public static String combine(int[] arr) {
+    StringJoiner sj = new StringJoiner(", ","[", "]");
+    for (int i = 0; i < arr.length; i++) {
+        sj.add(arr[i] + "");
+    }
+    return sj
+}
+```
+### summary
 1. 字符串的比较使用==比较好吗？为什么？什么时候使用==？
-不好，==比较地址，容易出问题；基本数据类型的变量或者值应该使用==比较
+不好，==比较地址，容易出问题，建议用equals；基本数据类型的变量或者值应该使用==比较
 
 2. 开发中比较字符串推荐使用什么方式比较？
 用equals方法或者equalsIgnoreCase
+
+3. =和new的不同：
+=创建出来的是存在堆内存的串池里面，而new是直接在堆内存开辟一个空间。
+
+4. StringBuilder和StringJoiner的区别：
+- StringBuilder: 
+  - 一个可变的操作字符串容器。
+  - 高效拼接字符串，还能反转内容。
+
+- StringJoiner：
+  - 高效拼接字符串，算半个StringBuilder升级版。
+
+5. 字符串拼接的底层原理：
+- 如果是`String s = 'a'+'b'+'c';`,会触发优化机制，自动整合成一个（复用串池字符串）。 自动编译成：String s = "abc";
+- 如果是有加值的，`String s = 'a'; String s1 = s+'b'; String s2 = s1+'c';`, 流程图：串池里有a和b，然后new StringBuilder， 利用append方法加入新的字符串。 每行都创建一个StringBuilder。注意一个+至少两个对象。
+jdk8新机制预估，系统预估拼接之后的总大小，把要拼接的内容放在数组中，产生一个新字符串(类似new出来)。建议是拼接string最好不要用+，用StringBuilder或者StringJoiner。
+注意，StringBuilder的容量就是int最大值。
+
+6. StringBuilder源码
+- 创建一个字节数组，默认容量16（不是长度，是容量，容量是最多放多少，长度是已经放了多少）  
+- 如果容量不够，它会自己扩容，老容量*2+2=34. 如果超出扩容，例如现在36，那就将现在容量变成36，以实际长度为准。  
+- StringBuilder.capacity()可以看容量。
 
 ## ArrayList
 对容器进行操作都有那些方法：
@@ -2159,3 +2342,748 @@ summary：
 - `set(int index, E element)`
 
 注意：集合容器中存储的每个对象是什么东西？存的在堆内存中的地址。
+
+### Static
+如果要用static修饰：
+- 被static 修饰的成员变量（静态变量）
+  - 特点：被该类所以对象共享；静态变量是随着类的加载而加载的，优先于对象的出现；不属于对象，属于类。
+  - 调用方式：
+    - 类名调用（推荐这个）
+      `Student.teacherName = "wilson"; Student student = new Student();`
+    - 对象名调用
+
+- 被static修饰的成员方法（静态方法）
+  - 特点：多用在测试类和工具类中；javabean类中很少用
+  - 调用方法：
+    - 类名调用（推荐）
+    - 对象名调用
+
+static String teacherName;先存在堆内存（静态区）；方法main在栈内存  
+什么时候使用static？  
+当多个对象共享同一个变量的时候，就加上static。  
+
+类的种类：
+- Javabean：用来指描述一类事物的类，比如，Student，Teacher，Dog等。
+- 测试类：用来检查其他类是否书写正确的，带有main方法的类，程序入口。
+- 工具类：不是用来描述一类事物的，而是帮我们做一些事情的类。
+
+工具类： 
+1. 类名要知其意
+2. 私有化构造方法
+3. 方法定义为静态
+
+#### Summary
+- 静态方法只能访问静态变量和静态方法（因为静态方法会访问静态区，但是非静态区的变量不存在静态区；顺便静态变量属于类，现在对象都没创建那肯定引用不了的）
+- 非静态方法可以访问静态变量或者静态方法，也可以访问非静态成员变量和非静态成员方法。
+- 静态方法中是没用this关键字。
+
+简单来说就是：静态方法中，只能访问静态。非静态方法可以访问所有。静态方法中没有this关键字。
+
+### 继承 Inheritance
+什么时候用继承？
+当类与类之间，存在相同的内容，并满足子类是父类的一种。
+
+继承的格式：
+public class 子类 extends 父类 {}
+
+继承后子类的特点：
+- 可以使用父类的属性和行为，可以在父类基础上增加其他功能。
+- Java只支持单继承不支持多继承。（一个子类不能继承多个父类，一个子类只能继承一个父类）
+- 但是可以多层继承，子类A继承父类B，父类B可以继承父类C。（此时子类A是类C的间接类）
+- 每个类都直接或间接继承于Object类。
+- 子类只能访问父类非私有成员（也就是private类是没法访问）
+
+设计继承核心：
+- 共性内容抽取
+- 子类是父类的一种
+- 画图的时候从下往上画，写代码从父类往子类写
+
+practice 1:  
+A: 吃饭，喝水，抓老鼠  
+B：吃饭，喝水，抓老鼠  
+C：吃饭，喝水，看家，拆家  
+D：吃饭，喝水，看家，乱跑  
+
+继承划分：  
+步骤1：  
+猫（吃饭，喝水，抓老鼠）：A和B  
+狗（吃饭，喝水，看家）：C（拆家）和D（乱跑）  
+
+步骤2：  
+宠物（吃饭，喝水）：猫（抓老鼠）和狗（看家）  
+
+子类到底能继承父类中哪些内容？  
+- 内存图  
+
+| 分类 | 私有是否 | private |
+|------|--------|---------|
+| 构造方法 | 非私有 不能（被子类继承）| private不能（被子类继承）|
+| 成员变量 | 非私有 能 |  private能 |
+| 成员方法 | 非私有 能 | private不能 |
+
+#### summary
+成员变量的访问特点：就近原则 - 谁离我近，我就用谁  
+e.g.  
+```java
+public class Fu {
+    String name = "Fu";
+}
+public class Zi extends Fu {
+    String name = "Zi";
+    public void show() {
+        String name = "zi";
+        sout(name);
+    }
+}
+
+// print out zi
+```
+
+e.g. 2  
+```java
+public class Fu {
+    String name = "Fu";
+}
+public class Zi extends Fu {
+    String name = "Zi";
+    public void show() {
+        String name = "zi";
+        sout(name);
+        sout(this.name);
+        sout(super.name)
+    }
+}
+```
+##### summary
+先在局部位置找(varible)，本类成员位置找(this.variable)，父类成员位置找(super.variable)，逐级往上。
+
+成员方法的访问特点：  
+和成员变量是一样的。  
+e.g. 1  
+```java
+public class Fu {
+    String name = "Fu";
+    public void test1() {}
+    public void test2() {}
+}
+public class Zi extends Fu {
+    String name = "Zi";
+    public void show() {
+        String name = "zi";
+        this.test1();
+        this.test2();
+
+        super.test1();
+        super.test2();
+    }
+}
+```
+
+#### 构造方法特点
+- 父类中的构造方法不会被子类继承
+- 子类所有的构造方法默认先访问父类中的无参构造，在执行自己。(因为子类在初始化的时候，有可能会使用到父类中的数据，如果父类没用完成初始化，子类将无法使用父类的数据。)
+- 子类初始化之前，一定要调用父类构造方法先完成父类数据空间的初始化。（这也就是为啥子类一开始第一行都是`super()`，不写也存在）
+- 默认先访问父类中无参的构造方法，在执行自己的，如果想要访问父类有参构造，必须手动书写。
+```java
+//parent
+public class Fu {
+    String name;
+    int age;
+    public Fu(){}
+    public Fu(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+}
+//child
+public class Zi extends Fu {
+    public Zi() {
+
+    }
+}
+```
+
+### this和super的总结
+- this: 理解为一个变量，表示当前方法调用者的地址值。
+```java
+public class Student {
+    String name;
+    int age;
+    public void show() {
+        sout(name+"..."+age);
+    }
+    //相当于public void show(Student this)
+}
+
+public class Test {
+    public static void main(String[] args) {
+        Student s = new Student();
+        s.name = "abc";
+        s.age = 12;
+        s.show();
+    }
+}
+```
+- super: 代表父类储存空间。
+
+|关键字|访问成员变量|访问成员方法|访问构造器方法|  
+|-----|----------|-------------|------------|
+|this|this.成员变量<br>访问本类成员变量|this.成员方法(...)<br>访问本类成员方法|this(...)<br>访问本类构造方法|
+|super|super.成员变量<br>访问父类成员变量|usper.成员方法(...)<br>访问父类成员方法|super(...)<br>访问父类构造方法|
+
+### 方法重写：
+当父类的方法不能满足子类现在的需求时，需要进行方法重写。  
+格式：`@Override`  
+本质：是基于继承结构的
+|内容|A类|B类|C类|
+|----|---|---|---|
+|方法名|method2|method2|method1 & method2|
+|虚方法表|C:method1 & A:method2|C:method1 & B:method2| method1 & method2|
+#### summary
+1. 重写方法的名称，形参列表必须与父类中的一致。
+2. 子类重写父类方法时，访问权限子类必须大于等于父类（`空着不写<protected<public`）
+3. 子类重写父类方法时，返回值类型子类必须小于父类（建议：重写的方法尽量和父类保持一致）
+4. 私有方法和静态方法还有final的不能被重写（其实就是这俩没办法被添加到虚方法表。所以说只有能被添加到虚方法表的，才能被重写）
+e.g.  
+假设这里有父类Animal和子类Dog&Cat。父类不能写public Dog巴拉巴拉，然后子类写public Animal巴拉巴拉。
+```java
+public class Person {
+    public Animal eat() {
+        return null;
+    }
+    public Dog eat() {
+        return null;
+    } // will show error
+}
+class Student extends Person {
+    public Animal eat() {
+        return null;
+    }
+    public Dog eat() {
+        return null;
+    }
+    public Cat eat() {
+        return null;
+    }
+}
+```
+### 多态 Polymorphism
+同种类型的对象，表现出不同的形态。  
+格式：父类类型 对象名称 = 子类对象;  
+前提：  
+- 有继承关系
+- 有父类引用指向子类对象
+- 有方法重写
+
+#### 多态调用成员特点
+- 变量调用：编译看左边，运行看左边。
+```java
+Animal a = new Dog();
+a.name; //返回Animal里面的name值
+a.show();//返回Dog里面的show方法内容
+//看左边的父类有没有这个变量，有的话，编译成功，没用就error。
+```
+- 方法调用：编译看左边，运行看右边。（因为如果子类对父类方法进行重写，在虚方法表里面是会把以前的父类方法覆盖的）
+
+注意：先加载object类，在加载父类，在加载子类
+
+#### 多态优势
+- 再多态形式下，右边对象可以实现解耦合，便于扩展和维护
+```java
+Person p = new Student();
+p.work();
+```
+- 定义方法的时候，使用父类型作为参数，可以接受所有子类对象，体现多态的扩展性和便利。
+
+弊端：  
+- 不能使用子类的特有功能。
+解决方法：
+- 自动类型转换
+`Person p = new Student(); `
+- 强制类型转换
+`Student s = (Student) p`
+
+强制类型转换能解决什么问题？  
+- 可以转换成真正的子类类型，从而调用子类独有功能。
+- 转换类型与真实对象类型不一致会报错。
+- 转换的时候，用`instanceof`进行判断
+
+```java
+class Animal {
+    public void eat() {
+        sout("animal eats something.")
+    }
+}
+
+class Dog extends Animal {
+    @Override
+    public void eat() {
+        sout("dog eats bone.")
+    }
+    public void lookHome() {
+        sout("stay at home.")
+    }
+}
+class Cat extends Animal {
+    @Override
+    public void eat() {
+        sout("cat eats fish.")
+    }
+    public void catchMouse() {
+        sout("catch mouse")
+    }
+}
+
+public class Test {
+    psvm{
+        Animal a = new Dog();
+        a.eat(); //"dog eats bone."
+        //多态不能调用子类特有的功能
+        //也就是a.lookHome()之类的是没有的。
+
+        //解决方案：
+        //变回子类型就行
+        //注意：转换不能瞎转，例如转成Cat
+        //Cat c = (Cat) a;
+        //c.catchMouse();
+        Dog d = (Dog) a; 
+        d.lookHome();
+
+        //jdk14新特性
+        //先判断a是不是Dog类型，如果是，强转为Dog类型，之后的变量名为d；false就无事发生。
+        a instanceof Dog d;
+    }
+}
+```
+
+### 包 package
+命名规则：需要全部英文小写（可以是公司域名反写+包的作用）  
+使用其他类时，需要使用全类名。  
+作用：类似文件夹，管理不同功能的java类
+
+### final
+不希望别人改变的时候使用
+- 使用在方法：不能被chongxie
+- 使用在类：不能被继承
+- 使用在变量：只能被赋值一次（常量）
+注意：常量命名需要全部单词大写，多个单词用下划线隔开。例如`final int MAX_NUMBER = 24;`  
+如果final修饰基本类型：那存储的数据值不能变；如果修饰引用数据类型，那变量存储的地址值不能变。String内部代码已经加了final，所有final String也不可改。
+
+### 权限修饰符
+作用范围：从小到大`private<空着不写<protected<public`
+|修饰符|同一个类中|同一个包中其他类|不同包下的子类|不同包下的无关类|
+|------|----------|--------------|-------------|---------------|
+|private|yes||||
+|空着不写|yes|yes|||
+|protected|yes|yes|yes||
+|public|yes|yes|yes|yes|
+
+- private: 只能自己用
+- 默认：只能本包用
+- protected：其他包的子类可以用
+- public：都能用
+
+### 代码块
+- 局部代码块：写在方法大括号里面的（本质是节约内存，但是现在不需要了）
+- 构造代码块：就是写在类里面，优先于构造方法执行。（现在基本不用了）
+```java
+public class Student{
+    String name; 
+    int age;
+    {sout("hello")} //结构代码块
+    public void show() {
+        
+    }
+}
+```
+- 静态代码块：随着类的加载而加载，自动触发只执行一次（一般初始化的时候用）
+`static {sout("abc")}`
+
+### 抽象类
+- 抽象方法：将共性的行为（方法）抽取到父类之后。由于每一个子类执行的内容时不一样的，所以，在父类中不能确定具体的方法体。
+- 抽象类：如果一个类中存在抽象方法，那么该类就必须声明为抽象类。
+- 抽象方法格式：`public abstract 返回值类型 方法名(参数列表);` 不写方法体
+- 注意事项：
+  - 抽象类不能实例化（不能创建对象）。
+  - 抽象类中不一定有抽象方法，有抽象方法的类一定是抽象类。
+  - 可以有构造方法
+  - 抽象类的子类
+    - 要么重写抽象类中所有抽象方法
+    - 要么是抽象类
+
+设计抽象类：
+|品种|属性|行为|
+|----|----|---|
+|frog|name, age|eat bug; drink|
+|dog|name,age|eat bone; drink|
+|sheep|name,age|eat grass; drink|
+多种吃，就可以写抽象方法
+Animal(name,age; drink, eat) -> frog(eat bugs)/dog(eat bone)/sheep(eat grass)
+`code see abstractDemo2`
+
+#### summary
+抽象类作用：抽取共性时，无法确定方法体，就把方法定义为抽象的，强制让子类按照某种格式重写。
+
+### 接口 Interface
+定义接口：`public interface 接口名 {}`  
+接口不能实例化  
+实现接口：`public class Abc implements 接口名 {}`  
+接口的子类（实现类）
+要么重写接口中的所有抽象方法，要么是抽象类
+
+注意：
+- 接口和类的实现关系，可以单实现，也可以多实现`public class Abc implements 接口1, 接口2{}`
+- 实现类还可以继承一个类的同时实现多个接口`public class Abc extends parent implements interface1, interface2 {}`
+
+#### 接口成员特点
+- 成员变量
+  - 只能是常量，默认修饰符public static final
+- 构造方法
+  - 无
+- 成员方法
+  - 只能是抽象方法，默认修饰符：public abstract
+
+### 接口和类的关系
+- 类和类的关系
+  - 继承关系，只能单继承，不能多继承，但可以多层继承
+- 类和接口的关系
+  - 实现关系，可以但单实现，也可以多实现，还可以在继承一个类的同时实现多个接口（多个接口有重名的只写一个就ok）
+- 接口和接口的关系
+  - 继承关系，可以单继承，也可以多继承（如果实现类实现类最下面的子接口，那么就需要重写所有的抽象方法）
+
+#### 补充
+jdk7以前：接口中只能定义抽象方法  
+jdk8新特性：接口中可以定义有方法体的方法。（默认，静态）  
+jdk9新特性：接口中可以定义私有方法。  
+
+为什么要改？  
+因为以前是只要接口发生变化，所有implement都要改变，很不方便
+
+jdk8之后的接口新增方法：  
+- 允许在接口中定义默认方法，需要使用关键字default修饰
+  - 作用：解决接口升级问题。
+  - 接口中默认方法定义格式：
+    - 格式`public default 返回值类型 方法名（参数列表）{}`
+    - 规范`public default void show(){}`
+  - 接口中默认方法的注意事项：
+    - 默认方法不是抽象方法，所以不强制被重写，但是如果被重写，重写的时候去掉default关键字。
+    - public可以省略，default不能省略。
+    - 如果实现多个接口，多个接口存在相同名字的默认方法，子类就必须对该方法进行重写（不管子类用不用这个方法，因为idea分不清你到底是要调用哪个interface里面的方法，所以干脆强制重写）。
+```java
+public interface Inter {
+    abstract void method();
+    default void show() {
+        System.out.println("This is a default method");
+    }
+}
+```
+- 允许在接口中定义静态方法，需要用static修饰
+  - 接口中静态方法定义格式：
+    - 格式`public static 返回值类型 方法名（参数列表）{}`
+    - 范例`public static void show() {}`
+  - 接口中静态方法注意事项：
+    - 静态方法只能通过接口名调用，不能通过实现类或者对象名调用
+    - public可以省略，static不能省略
+```java
+public class Test {
+    public static void main(String[] args) {
+        Inter.show();
+    }
+}
+
+public interface Inter {
+    public static void show() {
+        System.out.println("this is static method");
+    }
+}
+
+```
+
+jdk9新增方法  
+接口中私有方法定义
+- 格式1`private 返回值类型 方法名（参数）{}`
+- 范例1`private void show(){}`
+- 格式2`private static 返回值类型 方法名（参数）{}`
+- 范例2`private static void show() {}`
+```java
+//例如以下情况就可以用private
+public interface Inter {
+    private void method() {
+        sout("here exits 100 lines code")
+    }
+}
+```
+
+#### 适配器设计模式 Adapter design pattern
+- 设计模式(design pattern)：一套反复使用，多数人知晓的，经过分类编目的，代码设计经验总结。使用设计模式是为了可重复代码，让代码更容易被他人理解，保障代码可靠性，程序重要性。
+- 什么时候使用适配器？
+  - 当一个接口抽象方法过多，但是我只想使用其中一部分的时候
+  - 步骤：1. 添加一个中间类（XXXAdapter），实现对应接口，对接口中的抽象方法进行空实现，让真正的实现类继承中间类，并重写需要用的方法。为了避免其他类创建适配器类的对象，中间的适配器类用abstract进行修饰。
+```java
+public abstract class InterAdapter implements Inter{
+    @Override
+    public void method() {
+
+    }
+
+    @Override
+    public void method2() {
+
+    }
+
+    @Override
+    public void method3() {
+
+    }
+
+    @Override
+    public void method4() {
+
+    }
+
+    @Override
+    public void method5() {
+
+    }
+}
+
+public interface Inter {
+    void method();
+    void method2();
+    void method3();
+    void method4();
+    void method5();
+}
+
+public class InterImpl extends InterAdapter {
+    @Override
+    public void method5() {
+        System.out.println("print method 5");
+    }
+}
+```
+### 内部类
+在一个类里面，在定义一个类。  
+e.g. 在A类的内部定义B类，B类就被称为内部类  
+规则：
+- 内部类表示的事物是外部类的一部分。
+- 内部类单独出现没用任何意义。
+
+特点：
+- 内部类可以直接访问外部类的成员，包括私有。
+- 外部类要访问内部类的成员，必须创建对象。
+```java
+public class Outer { //外部其他类
+    public class Inner { //内部类
+
+    }
+}
+```
+practice1  
+```java
+public class Car {
+    String carName;
+    int carAge;
+    int carColor;
+    class Engine {
+        String engineName;
+        int engineAge;
+    }
+}
+```
+#### 成员内部类
+可以被修饰符修饰，例如private, 不写，protected, public, static等  
+注意，jdk16之前不能定义静态变量，之后可以
+
+创建内部类对象：
+- 在外部类编写方法，对外提供内部类对象。
+- 直接创建`外部类格式.内部类名 对象名 = 外部类对象.内部类对象;`
+
+#### 静态内部类
+- 只能访问外部类中的静态变量和静态方法，如果想要访问非静态的需要创建对象。  
+- 创建静态内部类对象的格式：`外部类名.内部类名 = new 外部类名.内部类名();`
+- 调用非静态方法格式：先创建对象，用对象调
+- 调用静态方法格式：`外部类.内部类名.方法名();`
+- 例子看oopinnerclassdemo2
+
+#### 匿名内部类
+
+本质上就是隐藏了名字的内部类。
+格式：
+```java
+new class/interface name {
+    override method;
+};
+
+new Inter() {
+    public void show() {
+
+    }
+};
+```
+
+practice 1:  
+```java
+public class Test {
+    public static void main(String[] args) {
+        new Swim() {
+
+            @Override
+            public void swim() {
+                System.out.println("new interface override");
+            }
+        };
+    }
+}
+
+public interface Swim {
+    void swim();
+}
+
+```
+#### 局部内部类
+1. 将内部类定义在方法里面的就叫局部内部类，类似于方法里面的局部变量
+2. 外界是无法直接使用，需要在方法内部创建对象并使用。
+3. 该类可以直接访问外部类成员，也可以访问方法的局部变量。
+demo看oppinnerclassdemo3
+
+#### summary of inner class
+什么是内部类？  
+写在一个类里面的类。  
+
+什么时候用到内部类？  
+B类表示的事物是A类的一部分，且B单独存在没有意义。（例如：汽车发动机，ArrayList迭代器，人的心脏等）
+
+### 常用API
+#### Math
+|method|方法名|说明|
+|------|------|----|
+|public static int|abs(int a)|绝对值 absolute value|
+|public static double|ceil(double a)|向上取整 round up|
+|public static double|floor(double a)|向下取整 round down|
+|public static int|round(float a)|四舍五入 round|
+|public static int|max(int a, int b)|两个数取较大值 max number|
+|public static int|min(int a, int b)|两个数取较x小值 min number|
+|public static double|pow(double a, double b)|a的b次幂的值 a^b|
+|public static double|sqrt(double a)|a的平方根 |
+|public static double|cbrt(double a)|a的立方根 |
+|public static double|random()|返回值为double的随机值,`range[0.0,1.0}`|
+
+```java
+Math.abs(-88); //88
+//此处有个小bug,int取值范围 -2147483648 - 2147483647
+//如果没有正数与负数对应，那么结果就会有误（因为正数比负数少一个
+//如果超过int范围可以用Math.absExact()
+Math.absExact(-2147483648); //它会报错
+
+Math.pow(4,0.5); //如果第二个数是0-1之间的小数，那就删根号。例如现在就是平方根号4
+Math.pow(2,-2); //1/(2^2),相当于0.25
+
+Math.floor(Math.randow() * 100) + 1;
+```
+
+practice 1: 判断一个数是否为质数
+```java
+//最快方法，判断是否能被平方根左边数整除就行。
+    public static boolean isPrime(int number) {
+        for (int i = 2; i <= Math.sqrt(number); i++) {
+            if (number % i == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+```
+
+practice 2：一个n位自然数等于自身各个数位上数字的n次幂之和
+e.g. 1^3 + 5^3 + 3^3 = 153; 1^4 + 6^4 + 3^4 + 4^3 = 1634
+
+#### System
+|方法名|说明|
+|------|---|
+|public static void exit(int status)|终止当前运行的java虚拟机|
+|public static long currentTimeMillis(int status)|放回当前系统时间毫秒值形式|
+|public static void arraycopy(数据原数组, 起始索引，目的地数组，起始索引，拷贝个数)|数组拷贝|
+
+- 计算机时间原点：1970年1.1 00:00:00  
+- 注意：arraycopy必须两组数组基本数据类型一致；如果数组超出长度也会报错；子类数据类型可以赋值给父类
+- 1 second = 1000 millisecond
+```java
+System.exit(0);//虚拟机正常停止
+System.exit(1);//虚拟机异常停止
+
+long start = System.currentTimeMillis();//一般用来算一下运行时间
+long end = System.currentTimeMillis();
+sout(end - start);
+
+int[] arr1 = {1,2,3,4,5,6};
+int[] arr2 = new int[10];
+System.arraycopy(arr1, 0, arr2, 0, 10)
+```
+#### Runtime
+|方法名|说明|
+|------|---|
+|public static Runtime getRunTime()|当前系统的运行环境对象|
+|public void exit(int status)|停止虚拟机|
+|public int availableProcessors()|获取CPU的线程数|
+|public long maxMemory()|JVM能从系统中获取总内存大小（单位byte）|
+|public long totalMemory()|JVM已经从系统中获取总内存大小（单位byte）|
+|public long freeMemory()|JVM剩余内存大小（单位byte）|
+|public Process exec(String command)|运行cmd命令|
+```java
+import java.io.IOException;
+
+public class RuntimeDemo {
+    public static void main(String[] args) throws IOException {
+        Runtime r1 = Runtime.getRuntime();
+        System.out.println(r1.availableProcessors());
+        System.out.println(r1.maxMemory() / 1024 / 1024);
+        System.out.println(r1.totalMemory() / 1024 / 1024);
+        System.out.println(r1.freeMemory() / 1024 / 1024);
+        r1.exec("notepad");
+        //cmd command: shutdown
+        // -s: will shutdown computer after 1 second
+        // -s -t: 指定关机时间
+        // -a: 取消关机操作
+        // -r: 关机并重启
+        // r1.exec("shutdown -s -t 3600")
+        // r1.exec("shutdown -a")
+        r1.exit(0);
+        System.out.println("for check");
+    }
+}
+```
+
+#### Object
+|方法名|说明|
+|------|---|
+|public Object()|空参构造|
+|public String toString()|返回对象的字符串表示形式|
+|public boolean equals(Object obj)|对比两个给对象是否相等|
+|public Object clone(int a)|克隆对象|
+
+`System.out.println()`：其中System是一个类名；out是其中的静态变量；println()是方法；参数表示打印的内容；总结：当我们打印一个对象的时候，底层会调用toString方法，把对象变成字符串, 然后再打印到控制台。  
+默认情况下，打印对象是打印对象地址值，想显示属性值，就override toString
+
+equals:
+- 如果没用override equals方法，那默认使用object中的方法对比，比较的是地址值是否相等
+- 如果相对比属性值，那就override equals
+```java
+String s = "abc";
+StringBuilder sb = new StringBuilder("abc");
+sout(s.equals(sb)); // false
+//看String里面的equals，因为对比不同对象，所以直接返回false
+sout(sb.equals(s)); // false
+//看StringBuilder里面有没有equals方法，如果没用直接就是object离equals方法。Object里面对比地址值，所以这俩肯定不对。
+```
+#### shallow copy
+
+#### deep copy
+
+#### Objects
+
+#### BigInterger
+
+#### BigDecima
+
+#### Regular expression
