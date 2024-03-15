@@ -1,0 +1,17 @@
+### Quantium
+- Behavior Question: 
+    - motivations to join Quantium
+    - knowledge of Quantium's competitors and clients
+    - What do you do for fun
+    - What are your special interests
+    - describing a time you overcame conflict within the workplace
+    - where do you see yourself in X years
+    - What makes you different?
+    - how did you hear about us
+    - How would you handle stress and challenges in workplace
+    - decide what you are interested in (front end or back end)
+- Technical Question: Coding Question + Systems Design
+    - how you would implement a board game application
+    - How would you structure an application for an online tic-tac-toe game?
+    - Describe this piece of Code Explain this system and how you would design it
+    - design and implement a software solution for the game connect-4
