@@ -244,6 +244,7 @@ psvm：快速生成`public static void(String[] args) {}`
 sout: 快速生成`System.out.println();`  
 数组名.fori：快速生成这个数组的遍历
 数组名.for：快速生成数组的遍历（for each写法）
+win快捷键：  
 快速生成construct/getter&setter: alt+insert
 ctrl + alt + S: 快速打开Setting  
 ctrl + alt + shift + S：快速打开project structure  
@@ -254,6 +255,27 @@ alt + insert: create constructor/ generate getter and setter
 ctrl + l + v: auto generate left side
 ctrl + b: read source code
 ctrl + alt + t: quick generate if/while/... loop for your selected code
+
+mac快捷键：  
+block comment: option + command + /
+single line comment: command + /
+improve code with suggestion: option + return
+expand code selection: option + up
+show/find usages: option + command + F7
+project tool: command + 1
+surround code fragments: option + command + T
+duplocate a code block or a line: command + D
+find usages(quickly locate to selected error position): option + F7
+move statement up/down: shift + command + up/down
+view recent file: command + E
+code generator(generate constructure or getter/setter): command + N
+reformat code: option + command + L
+create code constructs(like if/try-catch): control + command + return
+check code definition: option + space
+override methods: control + O
+interfaces methods: control + I
+extract variable refactoring（自动生成左边变量名）:option + command + V
+
 
 idea 修改主题：  
 File -> Settings -> Appearance -> theme  
@@ -3076,14 +3098,988 @@ sout(s.equals(sb)); // false
 sout(sb.equals(s)); // false
 //看StringBuilder里面有没有equals方法，如果没用直接就是object离equals方法。Object里面对比地址值，所以这俩肯定不对。
 ```
-#### shallow copy
 
-#### deep copy
+clone:
+属于shallow copy
+
+#### copy
+定义: 把A对象的属性值完全拷贝给b对象。
+##### shallow copy
+如果是基本数据类型，直接拷贝属性值，如果是引用数据类型，拷贝地址值.  
+不管对象内部的属性是基本数据类型还是引用数据类型，都完全拷贝过来。
+```java
+   @Override
+   public User clone() {
+       try {
+           User clone = (User) super.clone();
+           return clone;
+       } catch (CloneNotSupportedException e) {
+           throw new AssertionError();
+       }
+   }
+```
+
+##### deep copy
+如果是基本数据类型，直接拷贝属性值，如果是引用数据类型，在外面直接创建新的类型（此时记录的是新类型的地址值和原拷贝对象的不一样了，注意只要不是手动new的String，就是在串池里面的，它会直接复用）  
+基本数据类型，直接拷贝过来，字符串复用，引用数据类型会重新创建新的。
+
+```java
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        int[] data = this.data;
+        int[] newDta = new int[data.length];
+        for (int i = 0; i < data.length; i++) {
+            newDta[i] = data[i];
+        }
+        User u = (User) super.clone();
+        u.data = newDta;
+        return u;
+    }
+```
+
+还可以用第三方库-Gson
+##### summary 
+原数据：  
+int id 1
+String username 0x0011
+String passsword 0x0022
+String path 0x0033
+int[] data 0x0044
+
+此时堆内存：  
+new int[] 0x0044 {1,2,3,...,15,0}
+StringTable:  
+"username" 0x0011  
+"password" 0x0022  
+"path" 0x0033  
+（只针对于deep copy）new int[] 0x0055 {1,2,3,...,15,0}
+
+- shallow copy:
+  - int id 1
+  - String username 0x0011
+  - String passsword 0x0022
+  - String path 0x0033
+  - int[] data 0x0044
+- deep copy: (此时堆内存出现一个新的数组)
+  - int id 1
+  - String username 0x0011
+  - String passsword 0x0022
+  - String path 0x0033
+  - int[] data 0x0055
 
 #### Objects
+|方法名|说明|
+|------|---|
+|public static boolean equals(Object a, Object b)|先做非空判断，比较两个对象|
+|public static boolean isNull(Object o)|判断对象是否为null，为null返回true，反之依然|
+|public static boolean nonNull(Object obj)|判断对象是否为null，跟isNull的结果相反|
 
 #### BigInterger
+|构造方法|说明|
+|------|---|
+|public BigInteger(int num, Random rnd)|获取随机最大数，范围：【0-2的num次方-1】|
+|public bIGInteger(String val)|获取指定的大整数|
+|public BigInteger(String val, int radix)|获取指定进制的大整数|
+|public static BigInteger valueOf(logn val)|静态方法获取BigInteger的对象，优化版|
+
+```java
+Random r = new Random();
+BigInteger bd1 = new BigInteger(4, r);
+
+//字符串必须是整数否则会报错
+BigInteger bd1 = new BigInteger("100");
+
+BigInteger bd1 = new BigInteger("100", 2);
+
+//能表示范围比较小，在long范围内，但是第二种方法就多大都行；优点是提前把-16-16县创建好BigInteger对象，如果多次获取不会重新创建新的。
+BigInteger.valueOf(100);
+
+BigInteger b1 = BigInteger.valueOf(16);
+BigInteger b2 = BigInteger.valueOf(16);
+sout(b1 == b2); //true
+BigInteger b3 = BigInteger.valueOf(18);
+BigInteger b4 = BigInteger.valueOf(18);
+sout(b3 == b4); //false
+```
+对象一旦创建内部的数据不能改变。
+
+|方法名|说明|
+|------|---|
+|public BigInteger add(BigInteger val)|加法|
+|public BigInteger substract(BigInteger valu)|减法|
+|public BigInteger multiply(BigInteger val)|乘法|
+|public BigInteger divide(BigInteger val)|除法|
+|public BigInteger[] divideAndRemainder(BigInteger val)|除法，获取商和余数|
+|public boolean equals(Object o)|比较是否相同|
+|public BigInteger pow(int exponent)|次幂|
+|public BigInteger max/min(BigInteger val)|返回最大值/较小值|
+|public int intValue(BigInteger val)|转为int类型整数，超出范围数据有误|
+
+##### summary 
+- 如果BigInteger表示的数字没有超出long的范围，可以用valueof方法
+- 如果BigInteger表示的超出long范围，可以用构造方法获取。
+- 对象一旦创建，BigInteger内部记录不能发生改变。
+- 只要进行计算都会产生一个新的BigInteger对象
 
 #### BigDecima
+- 可以精确小数计算
+- 可以获得很大的小数
+
+|构造方法|说明|
+|------|---|
+|public BigDecimal(double val)|获取指定小数（但不精确）|
+|public BigDecimal(String val)|获取指定小数（精确）|
+|public static BigDecimal valueOf(double val)|静态方法获取BigDecimal对象|
+- 如果要表示的小数不大，没有超出double取值范围，可以用valueof，超出可以用BigDecimal(String val)
+- 对于valueOf()，如果传递的是0-10之间的整数，包含0和10，那么方法会返还已经创建好的对象，不会重新new
+
+|方法名|说明|
+|------|---|
+|public BigDecimal add(BigDecimal val)|加法|
+|public BigDecimal substract(BigDecimal valu)|减法|
+|public BigDecimal multiply(BigDecimal val)|乘法|
+|public BigDecimal divide(BigDecimal val)|除法|
+|public BigDecimal divide(BigDecimal val, 精确几位，舍入模式)|除法|
+
+- 作用：
+  - 表示较大的小树和解决小数运算精度失真问题
 
 #### Regular expression
+字符类：  
+|正则|说明|
+|----|------|
+|[abc]|只能是a，b，c|
+|[^abc]|除了a，b，c之外的任何字符|
+|[a-zA-Z]|a到z，A到Z|
+|[a-d[m-p]]|a到z，或m到p|
+|[a-z&&[def]]|a到z和def的交集，为：d，e，f|
+|[a-z&&[^bc]]|a到z和非bc的交集，等同于[ad-z]|
+|[a-z&&[^m-p]]|a到z和非m到p的交集，等同于[a-lq-z]|
+
+预定义字符：
+|正则|说明|
+|-----|-----|
+|.|任何字符|
+|\d|一个数字，[0-9]|
+|\D|非数字，[^0-9]|
+|\s|一个空白字符，[\t\n\x08\f\r]|
+|\S|非空白字符，[^\s]|
+|\w|[a-zA-Z_0-9]英文，数字，下划线|
+|\W|一个非单词字符[^\w]|
+
+数量词：  
+|正则|说明|
+|-----|-----|
+|X?|x，一次或0次|
+|X*|x, 零次或多次|
+|X+|x，一次或多次|
+|X{n}|x，正好n次|
+|X{n,}|x，至少n次|
+|X{n,m}|x，至少n次但不超过m次|
+
+忽略大小写：  
+- `(?i)abc` 忽略abc的大小写
+- `a(?i)bc` 忽略bc的大小写
+- `a((?i)b)c` 忽略b的大小写
+
+extra:
+|正则|说明|
+|-----|-----|
+|[]|里面内容只出现一次， [0-9]|
+|()|分组，a(bc)+|
+|^|取反，[^abc]|
+|&&|交集，不能写单个&[a-z&&m-p]|
+|`|`|写在方括号外面表示并集，x|X|
+|.|任意字符,但是除了回车符号不能表示\n|
+|\|转义符，\\d|
+
+
+```java
+sout("a".matches([^abc])); //false
+sout("z".matches([^abc])); //true
+sout("zz".matches([^abc])); //false
+sout("zz".matches([^abc][^abc])); //true
+sout("a".matches([a-zA-Z])); //true
+sout("z".matches([a-zA-Z])); //true
+sout("aa".matches([a-zA-Z])); //false
+sout("zz".matches([a-zA-Z])); //false
+sout("0".matches([a-zA-Z])); //false
+
+sout("\""); // print "
+sout("你".matches("..")); //false
+sout("你a".matches("..")); //true
+sout("a".matches("\\d")); //false
+sout("3".matches("\\d")); //true
+sout("333".matches("\\d")); //false
+
+//必须是数字，字母，下划线 至少6位
+sout("2442fdfdf".matches("\\w{6,}")); //true
+sout("2442f".matches("\\w{6,}")); //false
+//必须是数字和字符，必须是4位
+sout("2442f".matches("[a-zA-Z0-9]{4}")); //false
+sout("23df".matches("[a-zA-Z0-9]{4}")); //true
+
+//验证手机号
+String rgx = "1[3-9]\\d{9}"
+String rgx2 = "0\\d{2,3}-?[1-9]\\d{4,9}"
+// in java, . should write as \\.
+String rgx3 = "[a-z1-9]\\w+@[\\w&[^_]]{2,6}(\\.[a-zA-Z]{2,3}){1,2}"
+```
+
+##### summary
+pattern(正则表达式) & Matcher class（文本匹配器，按照正则表达式去读取字符串，从头开始读，在string中找匹配规则的子串）
+```java
+String str = "newadays there exist java21, but in before uni always teach student java8 or java11.";
+Pattern p = Pattern.compile("java\\d{0,2}");
+Matcher m = p.matcher(str);
+boolean b = m.find(); //寻找是否有满足规则的字符串的子串，如果没有，就false，如果有，返回true并在底层记录子串的起始索引和结束索引+1
+String s1 = m.group();
+sout(s1); //java 21
+
+
+public class Regular {
+    public static void main(String[] args) {
+        String str = "nowadays there exist java 21, but in before uni always teach student java 8 or java 11.";
+        System.out.println(findWord("java \\d{0,2}", str));
+    }
+    public static String findWord(String str, String str2) {
+        Pattern p = Pattern.compile(str);
+        Matcher m = p.matcher(str2);
+        StringBuilder s = new StringBuilder();
+        while (m.find()) {
+            s.append(m.group());
+            s.append(" ");
+        }
+        return s.toString();
+    }
+}
+
+```
+
+##### practice
+贪婪爬取：获取数据的时候尽可能的多获取（java默认这个）  
+费贪婪爬取：获取数据的时候尽可能的少获取（如果在+*的后面加上问号，那此时就是费贪婪爬取）
+```java
+public class Regular {
+    public static void main(String[] args) {
+        String str = "nowadays there exist java 21, but in before uni always teach student java 8 or java 11.";
+        String a = "abbbbbbbbccccccc";
+        String rgx = "ab+";
+        String rgx2 = "ab+?";
+        Pattern p = Pattern.compile(rgx);
+        Pattern p2 = Pattern.compile(rgx2);
+        Matcher m = p.matcher(a);
+        Matcher m2 = p2.matcher(a);
+        m.find();
+        m2.find();
+        System.out.println(m.group()); //abbbbbbbb
+        System.out.println(m2.group()); //ab
+    }
+}
+```
+可以识别regular expression的方法：
+replaceAll(); replaceFirst();
+
+#### Data class
+show as example:  
+```java
+package dateclass;
+
+import java.util.Date;
+import java.util.Random;
+
+public class DateDemo {
+    public static void main(String[] args) {
+        Date d = new Date();
+        System.out.println(d.getTime());
+        Date d2 = new Date(0L);
+        System.out.println(d2);
+
+        Date d1 = new Date(0L);
+        long time = d1.getTime();
+
+        time = time + 1000L * 60 * 60 * 24 * 365;
+        d1.setTime(time);
+        System.out.println(d1);
+
+        // compare two time
+        Random r = new Random();
+        Date date1 = new Date(Math.abs(r.nextInt()));
+        Date date2 = new Date(Math.abs(r.nextInt()));
+        long time1 = d1.getTime();
+        long time2 = d2.getTime();
+        if (time1 > time2) {
+            System.out.println("time 1 large");
+        } else if (time1 < time2) {
+            System.out.println("time2 large");
+        } else {
+            System.out.println("two equals");
+        }
+    }
+}
+
+```
+
+#### SimpleDateFormat
+格式化：把时间变成我们喜欢的格式  
+解析：把字符串表示成date格式
+|构造方法|说明|
+|------|---|
+|public SimpleDateFormat()||
+|public SimpleDateFormat(String pattern)||
+
+|方法名|说明|
+|------|---|
+|public final String format(Date date)|格式化（日期对象->字符串）|
+|public Date parse(Date date)|解析（字符串->日期对象）|
+
+`yyyy-MM-dd HH:mm:ss`
+
+|word|说明|例子|
+|------|---|----|
+|G|Era标志符|AD|
+|y|年|1996, 96|
+|M|年中的月份|July, Jul, 07|
+|w|年中的周数|27|
+|W|月份中的周数|2|
+|D|年中的天数|189|
+|d|月份中的天数|10|
+|F|月份中的星期|2|
+|E|星期中的天数|Tuesday, Tue|
+|a|Am/pm标记|PM|
+|H|一天中的小时数（0-23）|0|
+|k|一天中的小时数（1-24）|24|
+|K|am/pm中的小时数（0-11）|0|
+|h|am/pm中的小时数（1-12）|12|
+|m|小时中的分钟数|30|
+|s|分钟中的秒数|55|
+|S|毫秒数|978|
+|z|时区|pacific standard time zone|
+|Z|时区|-0800|
+
+```java
+    SimpleDateFormat s = new SimpleDateFormat("yyy-MM-dd HH:mm:ss EE");
+    Date d3 = new Date(0L);
+    String str = s.format(d3);
+    System.out.println(str);
+
+    String str1 = "2023-11-11 11:11:11";
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    Date da = sdf.parse(str1);
+    System.out.println(da.getTime());
+```
+
+#### Calendar class
+可以单独修改获取年月日（是抽象类，不能直接new）
+|方法名|说明|
+|------|---|
+|public static Calendar getInstance()|获取当前时间的日历对象|
+|public final Date getTime()|获取日期对象|
+|public final setTime()|给日历设置日期对象|
+|public long getTimeInMillis()|拿到时间毫秒值|
+|public void setTimeInMillis(long millis)|给日历设置毫秒值|
+|public int get(int field)|取日历中某个字段信息|
+|public void set(int field, int value)|修改日历的某个字段信息|
+|public void add(int field, int amount)|为某个字段增加/减少指定的值|
+
+summary:  
+如何获取对象：不是new，是getInstance()
+
+#### Time class
+Data class: ZoneId（时区）, Instant（时间戳）, ZoneDatTime（带时区的时间） 
+ZoneId: Set<String> getAvailableZoneId(); ZoneId systemDefault(); ZoneId of(String zoneId)  
+Instant:  
+|方法名|说明|
+|------|---|
+|static Instant now()|获取当前时间的instant对象|
+|static Instant ofxxx(long epochMilli)|根据（秒/毫秒/纳秒）获取instant对象|
+|zonedDateTime atZone(ZoneId zone)|指定时区|
+|Instant isXxx(Instant otherInstant)|判断系列的方法|
+|Instant minusXxx(long millisToSubstract)|减少时间系列的方法|
+|Instant plusXxx(long millisToSubstract)|增加时间系列的方法|
+```java
+    Instant instant1 = Instant.ofEpochMilli(0L);
+    System.out.println(instant1);
+    ZonedDateTime zonedDateTime = Instant.now().atZone(ZoneId.of("Australia/Melbourne"));
+    System.out.println(zonedDateTime);
+    boolean after1 = instant1.isAfter(instant2);
+    boolean before1 = instant1.isBefore(instant2);
+    Instant instant3 = instant1.minusMillis(1);
+```
+SimpleDataFormat: DateTimeFormatter
+Calendar: LocalDate, LocalTime, LocalDatTime
+|方法名|说明|
+|------|---|
+|public LocalDate toLocalDate()|LocalDateTime转换成一个LocalDate对象|
+|public LocalTime toLocalTime()|LocalDateTime转化成一个LocalTime对象|
+
+Util: Duration, Period, ChronoUnit
+
+#### 包装类
+Byte, Short, Character, Integer, Long, Float, Double, Boolean
+
+两种方法的区别：
+```java
+//提前将-127-128都创建好了，所以这俩同一个地址，如果超出范围那就相当于new了
+Integer i1 = Integer.valueOf(127); 
+Integer i2 = Integer.valueOf(127); 
+sout(i1 == i2);
+
+Integer i3 = new Integer(127); 
+Integer i4 = new Integer(127); 
+sout(i3 == i4); //false, address is different 
+
+```
+什么是包装类？基本数据类型对应的对象。  
+jdk5以后对包装类新增了什么特性？自动装箱，自动拆箱  
+我们以后如何获取包装类对象？直接赋值`Integer i = 10;`
+
+重点Integer:  
+|方法名|说明|
+|------|---|
+|public static String tobinaryString(int i)|得到二进制|
+|public static String toOctalString(int i)|得到八进制|
+|public static String toHexString(int i)|得到十六进制|
+|public static int parseInt(String s)|将数字串类型的整数转成int类型的整数|
+
+##### summary
+八种包装类中，出了character，其他都有parseXxx方法，进行类型转换。
+parseBoolean(); parseInt(); 
+键盘录入可以统一使用nextLine();方法
+`Integer.parseInt(abc)`
+
+### Algorithm 
+见算法分支
+
+### arrays
+|方法名|说明|
+|------|---|
+|public static String toString(array)|把数组拼接成一个字符串|
+|public static int binarySearch(array, element)|二分查找元素|
+|public static int[] copyOf(original array, new array length)|拷贝数组|
+|public static int[] copyOfRange(original array, start index, end index)|拷贝数组（指定范围）|
+|public static void fill(array, element)|填充数组|
+|public static void sort(array)|按默认方式（快排）进行排序|
+|public static void sort(array, sort method)|按照指定规则排序|
+
+```java
+int[] arr = {1,2,3,4,5,6,7,8,9,10};
+sout(Arrays.binarySearch(arr, 20)); //-11, 如果数组中找不到这个数，那就是这个数在数组应该插入的位置-1
+```
+
+```java
+package sort_demo;
+
+import java.util.Arrays;
+import java.util.Comparator;
+
+public class DescendingSort {
+    public static void main(String[] args) {
+        Integer[] arr = {2,3,1,5,6,7,8,4,9};
+
+        //sort原理：利用插入排序+二分查找，进行排序
+        //默认把0索引的数据当作是有序的序列，1索引到最后是无序的序列、
+        //遍历无序的得到里面每一个元素，假设当前遍历的数组是a元素
+        //把a往有序数组中插入，插入的时候，是利用二分查找确定a的插入点
+        //拿着a元素，跟插入点的元素进行比较，比较的规则就是compare方法
+        //如果方法返回的是负数，拿着a元素继续跟前面的数据对比，
+        // 如果返回的是正数，那就会拿着a和后面的比较
+        //如果返回是0，那就拿着a和后面比较
+        //直到能确认最后位置
+
+        //简单记忆：
+        //o1 - o2:升序排列
+        //o2 - o1:降序排列
+
+        //参数o1:表示在无序序列中，遍历得到的每一个元素
+        //参数o2:有序序列中的元素
+
+        //返回值：
+        //负数：-1，-2
+        Arrays.sort(arr, new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                return o2 - o1;
+            }
+        });
+        System.out.println(Arrays.toString(arr));
+    }
+}
+```
+
+### lambda
+可以忽略面向对象复杂格式
+```java
+() -> {
+
+}
+```
+- ():对应着方法的形参
+- ->:固定格式
+- {}:方法的方法体
+
+```java
+package lambdademo;
+
+public class Lambda2 {
+    public static void main(String[] args) {
+        method(new Swim() {
+            @Override
+            public void swimming() {
+                System.out.println("swimming");
+            }
+        });
+        method(() -> {
+            System.out.println("swimming");
+        });
+    }
+
+    public static void method(Swim a) {
+        a.swimming();
+    }
+}
+
+@FunctionalInterface
+interface Swim {
+    void swimming();
+}
+
+```
+
+#### 注意
+- lambda表达式可以用来简化匿名内部类的书写
+- 不是所有的匿名内部类都可以被书写，只能简化函数式接口的匿名内部类写法
+- 函数式接口：有且仅有一个抽象方法的接口，接口上方可以加@FuntionalInterface注解
+- lambda的作用：简化函数式接口的匿名内部类写法
+- 使用前提：必须是接口的匿名内部类，接口中只能有一个抽象方法
+- 好处：更简洁，灵活
+
+可省略部分：
+参数类型可以不写
+如果只有一个参数，参数类型可以省略，同时（）也可以省略
+如果lambda方法体只有一行，大括号，分号，return也可以不写，这三个需要同时省略。
+
+### 集合 
+#### 单列集合 collection
+一次添加一个数据  
+collection分为：
+- list: 添加的元素是有序（存和取的顺序是一样的），可重复，有索引
+  - ArrayList
+  - LinkedList
+  - Vector
+- set：无序，不重复，无索引
+  - HashSet
+    - LinkedHashSet
+  - TreeSet
+
+Collection: 是单列集合的parent接口，功能是全部单列集合都可以继承使用的。  
+|方法名|说明|
+|------|---|
+|public boolean add(E e)|把给定对象添加到当前集合中|
+|public void clear()|清空集合中所有元素|
+|public boolean remove()|把给定的对象在当前集合中删除|
+|public boolean contains(Object obj)|判定当前集合中是否包含给定的对象|
+|public boolean isEmpty()|判断当前集合是否为空|
+|public int size()|返回集合中元素的个数/集合的长度|
+
+```java
+    public static void main(String[] args) {
+        Collection<String> collection = new ArrayList<>();
+
+        //如果是set，重复添加会返回false
+        collection.add("aa");
+        System.out.println(collection);
+
+        collection.clear();
+        System.out.println(collection);
+
+        //不能通过index删除，只能通过对象删除
+        //删除成功返回true，失败返回false
+        System.out.println(collection.remove("aa")); //false
+        collection.add("bbb");
+        collection.add("ccc");
+        System.out.println(collection.remove("bbb")); //true
+
+        System.out.println(collection.contains("ccc"));//true
+        System.out.println(collection.contains("bbb"));//false
+
+        System.out.println(collection.isEmpty());//false
+        System.out.println(collection.size()); //1
+
+    }
+```
+##### Collection 迭代器遍历
+iterator class是集合专用遍历方法
+|方法名|说明|
+|------|---|
+|boolean hasNext()|判断当前位置是否有元素，有元素返回true，反之false|
+|E next()|获取当前位置的元素，并将iterator对象移向下一个位置|
+|remove()|删除|
+
+e.g.
+|3|1|4|5|2|7|
+ 0 1 2 3 4 5
+
+ ```java
+Iterator<String> it = list.iterator();
+while(it.hasNext()) {
+    String str = it.next();
+    System.out.println(str);
+}
+ ```
+
+ 注意：  
+ 1. 报错NoSuchElementException
+ 2. 迭代器遍历完毕，指针不会复位
+ 3. 循环中只能用一次next方法
+ 4. 迭代器遍历时，不能用集合的方法进行增加或删除
+
+##### 总结
+1. 迭代器在遍历集合的时候是不依赖索引的
+2. 如果当前位置没有元素，还强行获取，会报错NoSuchElementException
+3. 迭代器遍历完，指针不会复位
+4. 循环中只能用一次next方法
+5. 迭代器遍历，不能用集合的方法进行增加或者删除
+
+##### 增强for遍历
+所有的单列集合和数组才能用增强for进行遍历
+```java
+for (String s: str) {
+    System.out.println(s);
+    //注意修改增强for的变量，不会改变集合原本的数据
+    s="q";
+}
+```
+
+##### lambdab表达式遍历
+```java
+collection.forEach(s -> System.out.println(s));
+```
+
+#### list集合
+|方法名|说明|
+|------|---|
+|void add(int index, E element)|集合中的指定位置插入指定元素|
+|E remove(int index)|删除指定索引处的元素，返回被删除的元素|
+|E set(int index, E element)|修改指定索引处的元素，返回被修改元素|
+|E get(int index)|返回指定索引处的元素|
+```java
+    public static void main(String[] args) {
+        List<String> list = new ArrayList<>();
+        list.add("aaa");
+        list.add("bbb");
+        list.add("ccc");
+        //原来索引的元素依次往后移
+        list.add(1, "qqq");
+        System.out.println(list.remove(0)); //aaa
+
+        System.out.println(list);
+        System.out.println(list.set(1, "aaa"));
+        System.out.println(list.get(0));
+        System.out.println(list);
+    }
+```
+
+##### 迭代器遍历
+ ```java
+Iterator<String> it = list.iterator();
+while(it.hasNext()) {
+    String str = it.next();
+    System.out.println(str);
+}
+ ```
+
+ ##### 增强for遍历
+所有的单列集合和数组才能用增强for进行遍历
+```java
+for (String s: list) {
+    System.out.println(s);
+}
+```
+##### lambdab表达式遍历
+```java
+list.forEach(s -> System.out.println(s));
+```
+
+##### list iterator
+```java
+        ListIterator<String> listIterator = list.listIterator();
+        while (listIterator.hasNext()) {
+            String str = listIterator.next();
+            if ("bbb".equals(str)) {
+                listIterator.add("qqq");
+            }
+        }
+```
+
+##### 总结
+- 迭代器遍历：在遍历过程中需要删除元素，请使用迭代器
+- 列表迭代器：在遍历过程中需要添加元素，请使用列表迭代器
+- 增强for/lambda表达式：仅仅想遍历
+- 普通for：遍历的时候想操作索引，可以使用
+
+#### ArrayList
+底层原理：
+1. 利用空参创建的集合，在底层创建一个默认长度为0的数组。（size=0）
+2. 添加第一个元素时，底层会创建一个新的长度为10的数组。（size++）
+3. 当存满时，会扩容1.5倍
+4. 如果一次添加多个元素，1.5倍还放不下，则创建新数组的长度以实际为准
+
+#### linkedlist
+底层数据结构式双链表，查询慢，增删快，但是如果操作时首尾元素，速度也是极快的
+|方法名|说明|
+|------|---|
+|public void addFirst(E e)|列表开头插入指定元素|
+|public void addList(E e)|将指定元素追加到此列表的末尾|
+|public E getFirst()|返回此列表中的最后一个元素|
+|public E getLast()|返回此列表中的最后一个元素|
+|public E removeFirst()|从此列表中删除并返回第一个元素|
+|public E removeLast()|从此列表删除并返回最后一个元素|
+
+#### 泛型 Generic
+JDK5引入特性，可以在编译阶段约束操作的数据类型，并进行检查。  
+格式： <数据类型>  
+注意：  
+- 泛型只能支持引用数据类型，不能写基本数据类型（因为没办法转成object类型）
+- 指定泛型的具体类型之后，传递数据时，可以传入该类型或其子类的类型
+- 如果不写泛型，类型默认是object
+- 
+```java
+ArrayList<String> list = new ArrayList<>();
+```
+
+泛型的好处：  
+- 统一数据类型
+- 把运行时期的问题提前到了编译期间，避免了强制类型转换可能出现的异常，因为在编译阶段类型就可以确定下来。
+- 泛型可以在很多地方进行定义：类后面/方法上面/接口后面
+
+##### 泛型类
+使用场景：当一个类中，某个变量的数据类型不确定时，就可以用
+```java
+//此处的E可以理解为变量，但是不是用来记录数据的，而是记录数据类型的，也可以写成T/E/K/V
+public class ArrayList<E>{
+    public boolean add(E e) {
+        obj[size] = e;
+        size++;
+        return true;
+    }
+}
+```
+
+定义泛型：
+1. 使用类名后面定义的泛型（所有方法都能用）
+2. 在方法上申明定义自己的泛型（只有本方法能用）
+```java
+public class ArrayList{
+    public <E> boolean add(E e) {
+        obj[size] = e;
+        size++;
+        return true;
+    }
+}
+```
+
+##### 泛型接口
+```java
+public interface List<E> {}
+```
+如何使用带泛型的接口：
+1. 实现类给出具体类型
+2. 实现类延续泛型，创建对象时再确定
+
+```java
+public class MyList<E> implements List<String> {}
+public class MyList<E> implements List {override}
+```
+
+##### 泛型的继承和通配符
+- 泛型不具备继承性，但是数据具备继承性
+
+通配符？表示不确定的类型  
+? Extends E:表示可以传递e或e所有的子类类型  
+?super E: 表示可以传递e或e所有的父类类型  
+
+使用场景：
+1. 如果在定义类，方法，接口的时候，如果类型不确定，就可以定义泛型类/方法/接口
+2. 如果类型不确定，但是能知道以后只能传递某个继承体系中的，可以用泛型通配符
+
+#### 双列集合
+一次添加一对数据
+##### List
+- ArrayList
+- linkedList
+##### Set
+- 无序：存取顺序不一致
+- 不重复：可以去除重复
+- 无索引：没有带索引的方法，所以不能使用普通for遍历循环，也不能通过索引来获取元素
+```java
+public class SetDemo {
+    public static void main(String[] args) {
+        Set<String> s = new HashSet<>();
+        boolean r1 = s.add("233");
+        boolean r2 = s.add("233");// 重复了的只会出现一次
+        boolean r3 = s.add("322");
+        System.out.println(s);
+
+        // 三种遍历方法
+        Iterator<String> it = s.iterator();
+        while (it.hasNext()) {
+            String str = it.next();
+            System.out.println(str);
+        }
+        for (String string : s) {
+            System.out.println(string);
+        }
+        s.forEach(System.out::println);
+    }
+}
+
+```
+###### HashSet
+特点：无序，不重复，无索引  
+自定义对象要重写hashcode和equals，但是基本数据类型不用
+
+底层原理：
+- HashSet集合底层采用哈希表存储数据
+- 哈希表是一种对于增删改查数据性能都较好的结构
+- 如果集合中存储的是自定义的对象，必须要重写hashcode和equals方法
+
+哈希表组成：
+- jdk8以前，数组+链表
+  - 默认创建一个默认长度16，默认加载因为0.75的数组，数组名table
+  - 根据元素的哈希值跟数组的长度计算出应存入的位置
+  - 判断当前位置是否是null，如果是null直接存入
+  - 如果位置不为null，表示有元素，则调用equals方法比较属性值
+  - 一样：不存；不一样：存入数组，形成链表（新元素存入数组，老元素挂在新元素下面）
+- jdk8开始：数组+链表+红黑树
+  - 默认创建一个默认长度16，默认加载因为0.75的数组，数组名table
+  - 根据元素的哈希值跟数组的长度计算出应存入的位置
+  - 判断当前位置是否是null，如果是null直接存入
+  - 如果位置不为null，表示有元素，则调用equals方法比较属性值
+  - 新元素直接挂在老元素下面（如果链表长度大于8而且数组长度大于等于64时，自动转成红黑树）
+
+哈希值：
+- 根据hashcode方法计算出来的int类型的整数
+- 该方法定义在object类中，所有对象都可以调用，默认使用地址值进行计算
+- 一般情况下，会重写hashcode方法，利用对象内部的属性值计算哈希值
+- 如果已经重写hashcode方法，不同的对象只要属性值相同，计算出的哈希值就是一样的
+- 在小部分情况下，不同属性值或者不同的地址值计算出来的哈希值也有可能一样（哈希碰撞）
+
+对象的哈希值特点：
+- 如果没有重写hashcode方法，不同对象计算出来的哈希值是不同的
+
+为什么hashset存和取的顺序不一样？  
+存的时候是根据哈希值和数组长度决定存的位置，但是取是按照索引，每个索引对应的链表顺序取的  
+hashset为什么没有索引？  
+因为有的索引里面是链表，总不能链表里面所有值都是一个索引  
+hashset是利用什么机制保证数据去重的？  
+利用hashcode和euqals，利用hashcode获取当前hash值，通过哈希值判断存在数组哪个位置，然后再用equals比较内部的属性值是不是相等。
+```java
+package allcollection;
+
+public class HashSetDemo01 {
+
+    public static void main(String[] args) {
+        Student student1 = new Student("ww", 24);
+        Student student2 = new Student("ww", 24);
+        System.out.println(student2.hashCode()); //821270929
+        System.out.println(student1.hashCode()); //1160460865
+        // after override hashcode, output is 119033
+
+        // hash collapse
+        System.out.println("abc".hashCode()); // 96354
+        System.out.println("acD".hashCode()); // 96354
+    }
+}
+
+```
+###### TreeSet
+特点：可排序，不重复，无索引  
+可排序：按照元素的默认规则（从大到小）排序  
+TreeSet底层是基于`红黑树结构`来实现排序，增删改查性能都很好。
+- 对于数值类型：Integer, Double,默认按照从小到大的顺序进行排序。
+- 对于字符，字符串类型：按照字符在ASCII码表中的数字升序进行排序。
+`["aaa", "ab", "aba", "cd", "qwer"]`顺序
+
+TreeSet的；两种比较方式：
+- 第一种：默认排序/自然排序：javabean类实现Comparable接口指定比较规则(不需要重写hashcode因为它是红黑树结构，但是想要重新定义排序规则要重写comparable)
+```java
+    @Override
+    public int compareTo(StudentDemo o) {
+        // implement sort rule in here
+        return this.getAge() - o.getAge();
+    }
+    // this表示当前要添加的元素
+    // o表示已经在红黑树存在的元素
+    /* 返回值：
+     * 负数：认为要添加的元素是小的，在左边
+     * 正数：认为要添加的元素是大的，在右边
+     * 为0: 认为要添加的元素已经存在，舍弃
+     */
+```
+```java
+    StudentDemo studentDemo1 = new StudentDemo("lee", 23);
+    StudentDemo studentDemo2 = new StudentDemo("li", 24);        StudentDemo studentDemo3 = new StudentDemo("apple", 25);
+    TreeSet<StudentDemo> treeSet = new TreeSet<>();
+    treeSet.add(studentDemo3); // 将apple，25放到根节点，此时是黑色
+    treeSet.add(studentDemo2); // 和demo3对比，compareTo发现li小，24存到apple节点左边，此时apple根节点黑，li左下红
+    treeSet.add(studentDemo1); // 和demo3对比，compareTo发现lee小，23存在左边，但是左边有li，继续compareTo发现lee小，放到li左边
+    System.out.println(treeSet);
+    /*
+     *      li(black)
+     *     /   \
+     *   lee   apple
+     *   (red) (red)
+     */
+
+```
+- 第二种：比较器排序：创建TreeSet对象的时候，传递比较器Comparator指定规则
+ps：默认使用第一种，如果第一种不能满足，就用第二种
+```java
+/* 需求：比较器排序或者自然排序
+ * 需求：存入是个字符串，"c", "ab", "df", "qwer"
+ * 如果一样长则按照首字母排序
+ */
+
+        TreeSet<String> ts2 = new TreeSet<>((o1, o2) -> {
+            int result = o1.length() - o2.length();
+            result = result == 0 ? o1.compareTo(o2) : result;
+            return result;
+        });
+        ts2.add("c");
+        ts2.add("ab");
+        ts2.add("df");
+        ts2.add("qwer");
+        System.out.println(ts2);
+```
+###### LinkedHashSet
+特点：可排序，不重复，无索引  
+底层原理：
+- 这里的有序，是保证存储和取出的元素顺序一致
+- 底层结构依然是哈希表，只是每个元素又额外多了一个双链表机制记录存储的顺序
+
+```java
+package allcollection;
+
+import java.util.LinkedHashSet;
+
+public class LinkedHashSetDemo {
+    public static void main(String[] args) {
+        Student s1 = new Student("ww", 23);
+        Student s2 = new Student("w", 25);
+        Student s3 = new Student("wz", 24);
+        Student s4 = new Student("ww", 23);
+        LinkedHashSet<Student> s = new LinkedHashSet<>();
+        System.out.println(s.add(s1));
+        System.out.println(s.add(s3));
+        System.out.println(s.add(s2));
+        System.out.println(s.add(s4));
+        System.out.println(s);
+    }
+
+}
+
+```
+如果以后要数据去重，我们使用哪个？
+- 默认使用hashset
+- 如果要求去重且存取有序，才用linkedhashset
